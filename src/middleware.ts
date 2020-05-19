@@ -1,6 +1,6 @@
 import { MiddlewareAPI, Dispatch, AnyAction } from 'redux'
 import { path, equals } from 'ramda'
-import { MiddlewareConfig } from '../types'
+import { MiddlewareConfig } from './types'
 
 const throttle = <T extends unknown[]>(fn: (...x: T) => void, interval: number) => {
   let args: T | undefined
@@ -30,7 +30,7 @@ function defaultSerializer<T> (key: string, value: T) {
  * Middleware that will store properties within a redux subtree to local or session storage.
  * @param moduleName name of redux subtree
  * @param paths paths to the resources within the subtree
- * @param config  Middleware config. See docs for defaults
+ * @param config  Middleware config. See [docs](https://github.com/JulietAdams/BrowserStorageMiddleware#configs) for defaults
  */
 export function createBrowserStorageMiddleware<S, T> (moduleName: string, paths: string[], config?: Partial<MiddlewareConfig<T>>) {
   return (api: MiddlewareAPI<Dispatch<AnyAction>, S>) => {
@@ -40,7 +40,7 @@ export function createBrowserStorageMiddleware<S, T> (moduleName: string, paths:
         const previousSubtree = path<T>([moduleName, subtreePath], prevState)
         const nextSubtree = path<T>([moduleName, subtreePath], nextState)
         if (!equals(previousSubtree, nextSubtree) && nextSubtree !== undefined) {
-          const value = config?.serializer ? config.serializer(subtreePath, nextSubtree) : defaultSerializer(subtreePath, nextSubtree)
+          const value = config?.serialize ? config.serialize(subtreePath, nextSubtree) : defaultSerializer(subtreePath, nextSubtree)
           acc[subtreePath] = value
         }
         return acc

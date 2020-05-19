@@ -2,7 +2,7 @@
   "name": "browserstoragemiddleware",
   "version": "1.0.0",
   "description": "Redux middleware to store portions of state in the browser ",
-  "main": "index.js",
+  "main": "",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -16,6 +16,7 @@
   "license": "MIT",
   "dependencies": {
     "@babel/core": "^7.9.6",
+    "@babel/polyfill": "^7.8.7",
     "@types/ramda": "^0.27.6",
     "ramda": "^0.27.0",
     "redux": "^4.0.5"

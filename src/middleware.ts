@@ -1,6 +1,6 @@
 import { MiddlewareAPI, Dispatch, AnyAction } from 'redux'
-import { path, assocPath, mergeDeepRight, equals } from 'ramda'
-import { RehydratorConfig, MiddlewareConfig } from '../types'
+import { path, equals } from 'ramda'
+import { MiddlewareConfig } from '../types'
 
 const throttle = <T extends unknown[]>(fn: (...x: T) => void, interval: number) => {
   let args: T | undefined
@@ -25,14 +25,6 @@ function defaultSerializer<T> (key: string, value: T) {
   })
 }
 
-const defaultDeserializer = (value: string) => JSON.parse(value, (_, subValue) => {
-  if(typeof subValue === 'object') {
-    if(subValue['_isSet']) {
-      return new Set(subValue['arr'])
-    }
-  }
-  return subValue
-})
 
 /**
  * Middleware that will store properties within a redux subtree to local or session storage.
@@ -40,7 +32,7 @@ const defaultDeserializer = (value: string) => JSON.parse(value, (_, subValue) =
  * @param paths paths to the resources within the subtree
  * @param config  Middleware config. See docs for defaults
  */
-export function createSessionStorageMiddleware<S, T> (moduleName: string, paths: string[], config?: Partial<MiddlewareConfig<T>>) {
+export function createBrowserStorageMiddleware<S, T> (moduleName: string, paths: string[], config?: Partial<MiddlewareConfig<T>>) {
   return (api: MiddlewareAPI<Dispatch<AnyAction>, S>) => {
     const throttledMiddleware = throttle((prevState: S) => {
       const nextState = api.getState()
@@ -71,31 +63,4 @@ export function createSessionStorageMiddleware<S, T> (moduleName: string, paths:
       return result
     }
   }
-}
-
-/**
- * 
- * @param subTrees 
- * @param config 
- */
-export function rehydrateStore<S, T> (moduleNames: string[], config?: Partial<RehydratorConfig<S, T>>): Partial<S> {
-  return moduleNames.reduce<Partial<S>>((initialReduxState, key) => {
-    try {
-      const item = config?.storage === 'local' ? localStorage.getItem(key) : sessionStorage.getItem(key)
-      if(item !== null) {
-        const state = config?.deserializer ? config.deserializer(item) : defaultDeserializer(item)
-        if(typeof state === 'object') {
-          const initalModuleState = config?.initialState ? path<object>([key], config.initialState) : {}
-          const moduleState = Object.entries(state as object).reduce<object>((acc, [subKey, subValue]) => {
-            acc = assocPath([subKey], config?.deserializer ? config.deserializer(subValue) : defaultDeserializer(subValue), acc)
-            return acc
-          }, {})
-          initialReduxState = { ...initialReduxState, [key]: initalModuleState ? mergeDeepRight(initalModuleState, moduleState) : moduleState}
-        }
-      }
-      return initialReduxState
-    } catch (e) {
-      return initialReduxState
-    }
-  }, config?.initialState || {})
 }

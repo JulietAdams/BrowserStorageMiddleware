@@ -1,30 +1,7 @@
 import { MiddlewareAPI, Dispatch, AnyAction } from 'redux'
 import { path, equals } from 'ramda'
 import { MiddlewareConfig } from './types'
-
-const throttle = <T extends unknown[]>(fn: (...x: T) => void, interval: number) => {
-  let args: T | undefined
-
-  return (...x: T) => {
-    if (args === undefined) {
-      setTimeout(() => {
-        fn(...args as T)
-        args = undefined
-      }, interval)
-    }
-    args = x
-  }
-}
-
-function defaultSerializer<T> (key: string, value: T) {
-  return JSON.stringify(value, (_, subValue) => {
-    if(subValue instanceof Set) {
-      return {arr: Array.from(subValue), _isSet: true}
-    }
-    return subValue
-  })
-}
-
+import { hasStorage, throttle, defaultSerializer } from './utils'
 
 /**
  * Middleware that will store properties within a redux subtree to local or session storage.
@@ -34,6 +11,10 @@ function defaultSerializer<T> (key: string, value: T) {
  */
 export function createBrowserStorageMiddleware<S, T> (moduleName: string, paths: string[], config?: Partial<MiddlewareConfig<T>>) {
   return (api: MiddlewareAPI<Dispatch<AnyAction>, S>) => {
+    if(!hasStorage(config?.storage || 'session')) {
+      return (next: Dispatch<AnyAction>) => (action: AnyAction) => next(action)
+    }
+
     const throttledMiddleware = throttle((prevState: S) => {
       const nextState = api.getState()
       const value = paths.reduce<{[key: string]: string}>((acc, subtreePath) => {
@@ -47,12 +28,20 @@ export function createBrowserStorageMiddleware<S, T> (moduleName: string, paths:
       }, {})
 
       if(Object.keys(value).length > 0) {
-        if(config?.storage === 'local') {
-          const prev = localStorage.getItem(moduleName)
-          localStorage.setItem(moduleName, JSON.stringify( prev !== null ? { ...JSON.parse(prev), ...value} : value))
-        } else {
-          const prev = sessionStorage.getItem(moduleName)
-          sessionStorage.setItem(moduleName, JSON.stringify( prev !== null ? { ...JSON.parse(prev), ...value} : value))
+        try {
+          if(config?.storage === 'local') {
+            const prev = localStorage.getItem(moduleName)
+            localStorage.setItem(moduleName, JSON.stringify( prev !== null ? { ...JSON.parse(prev), ...value} : value))
+          } else {
+            const prev = sessionStorage.getItem(moduleName)
+            sessionStorage.setItem(moduleName, JSON.stringify( prev !== null ? { ...JSON.parse(prev), ...value} : value))
+          }
+        } catch(e) {
+          if(config?.errorHandler) {
+            config.errorHandler(e)
+          } else {
+            throw Error(e)
+          }
         }
       }
     }, config?.interval ? config.interval : 0)

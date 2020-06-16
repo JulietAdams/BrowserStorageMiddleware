@@ -12,11 +12,9 @@ npm install --save browserstoragemiddlware
 
 This package has two main exports: `createBrowswerStorageMiddleware` and `rehydrateStore`. It is totally optional to use `rehydrateStore` and instead use your own rehydrate method, if you want to do this checkout the docs for rehydrate store below. 
 
-The default serialization and parsing methods handle sets so that no values are lost. (See configs docs to know more about how this works)
-
 The default type of storage used is `sessionStorage`.
 
-I feel it is important to note that `localStorage` has a larger storage capacity than `sessionStorage` but is shared across tabs with the same origin and protocol. Use [this](http://dev-test.nemikor.com/web-storage/support-test/) handy storage capacity calculator for more precise and browser + host specific storage capacities. If you want to learn more about the differences between local and session storage refer to [this](https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API).
+Browser storage capacities vary by browser, storage type and host. Use [this](http://dev-test.nemikor.com/web-storage/support-test/) handy storage capacity calculator for more precise and browser + host specific storage capacities. If you want to learn more about the differences between local and session storage refer to [this](https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API).
 
 ### createBrowserStorageMiddlware
 
@@ -137,6 +135,12 @@ JSON.stringify(value, (_, subVal) => {
 
 The transform for sets is added due to  `JSON.stringify` not supporting sets.
 
+##### `errorHandler`
+
+A custom error handler. Expected a method with one argument of type `Error`.
+
+By default any runtime errors encountered will be thrown as expected. 
+
 ##### `storage`
 
 The type of browser storage to use.
@@ -180,6 +184,14 @@ JSON.parse(value, (_, subValue) => {
 ```
 
 The default accounts for `JSON.parse` not supporting sets and will insetad parse any objects that look like `{arr: any[],  _isSet: true }` as `new Set(arr)`. 
+
+
+##### `errorHandler`
+
+A custom error handler. Expected a method with one argument of type `Error`.
+
+By default any runtime errors encountered will be thrown as expected. 
+
 
 ##### `storage`
 

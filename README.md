@@ -183,7 +183,7 @@ JSON.parse(value, (_, subValue) => {
  })
 ```
 
-The default accounts for `JSON.parse` not supporting sets and will insetad parse any objects that look like `{arr: any[],  _isSet: true }` as `new Set(arr)`. 
+The default accounts for `JSON.parse` not supporting sets and will instead parse any objects that look like `{arr: any[],  _isSet: true }` as `new Set(arr)`. 
 
 
 ##### `errorHandler`
